@@ -13,6 +13,13 @@ declare module 'asana' {
     customFields: {
       getCustomField(fieldGid: string, options?: any): Promise<any>;
     };
+    users: {
+      getUser(userGid: string, options?: any): Promise<any>;
+    };
+    workspaces: {
+      getWorkspace(workspaceGid: string, options?: any): Promise<any>;
+      getWorkspaces(options?: any): Promise<any>;
+    };
   }
 
   export namespace Client {

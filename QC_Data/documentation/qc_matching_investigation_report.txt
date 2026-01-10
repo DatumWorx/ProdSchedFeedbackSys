@@ -1,0 +1,265 @@
+====================================================================================================
+QC ENTRY MATCHING INVESTIGATION REPORT
+====================================================================================================
+
+Purpose: Prove or disprove whether operators have logged more QC entries
+         than are being matched in the time comparison analysis.
+
+Date: 2025-12-23 13:21:43
+
+====================================================================================================
+
+Total unique raw operator names in database: 313
+
+====================================================================================================
+OPERATOR: Zulema
+====================================================================================================
+Search terms: Zulema, Zulema Flores
+
+--- STANDARDIZED ENTRIES (operator_standardized = 'Zulema') ---
+  Total entries: 226
+  Total hours: 30.66
+  Unique dates: 118
+  Date range: 2024-12-31 to 2025-12-23
+  Unique raw operator names mapped: 10
+  Raw names: ZB, ZM, ZULEMA, Zm, Zule, Zulema, ivi    zulema, zm, zule, zulema
+
+--- RAW MATCHED ENTRIES (via aliases) ---
+  Total entries: 227
+  Total hours: 28.10
+  Unique dates: 118
+
+--- GROUP ENTRIES (containing this operator) ---
+  Total entries: 14
+  Total hours: 64.42
+  Unique dates: 9
+  Example group entries:
+    2025-01-22: 'IS ,MM ,ZB' → 'Isidro + Others' (Dept: None, WO: None)
+    2025-01-23: 'IS ,MM ,ZB' → 'Isidro + Others' (Dept: None, WO: None)
+    2025-01-23: 'IS ,MM ,ZB' → 'Isidro + Others' (Dept: None, WO: None)
+    2025-01-27: 'irma/zule/raf' → 'Irma + Others' (Dept: None, WO: None)
+    2025-03-13: 'Irma /M/zulema' → 'Irma + Others' (Dept: Assembly, WO: None)
+    2025-04-24: 'EM+JC' → 'Zulema + Others' (Dept: None, WO: 17818)
+    2025-04-24: 'EM+JC' → 'Zulema + Others' (Dept: None, WO: 17818)
+    2025-05-30: 'Michelle, Zulema' → 'Michelle + Others' (Dept: None, WO: 406801)
+    2025-06-02: 'Maria, Ibis, Zulema' → 'Maria + Others' (Dept: None, WO: 406801)
+    2025-06-02: 'Maria, Ibis, Zulema' → 'Maria + Others' (Dept: None, WO: 406801)
+    ... and 4 more
+
+--- POTENTIAL UNMAPPED ENTRIES (fuzzy search) ---
+  Found 9 raw operator names containing search terms:
+    'EVELYN-ZULEMA' → currently mapped to 'Evelyn + Others'
+      ⚠️  Maps to 'Evelyn + Others' instead of 'Zulema'
+    'Irma /M/zulema' → currently mapped to 'Irma + Others'
+      ⚠️  Maps to 'Irma + Others' instead of 'Zulema'
+    'Maria, Ibis, Zulema' → currently mapped to 'Maria + Others'
+      ⚠️  Maps to 'Maria + Others' instead of 'Zulema'
+    'Michelle, Zulema' → currently mapped to 'Michelle + Others'
+      ⚠️  Maps to 'Michelle + Others' instead of 'Zulema'
+    'RUTH-ZULEMA' → currently mapped to 'Ruth + Others'
+      ⚠️  Maps to 'Ruth + Others' instead of 'Zulema'
+
+--- SUMMARY ---
+  Standardized entries: 118 days, 30.66 hours
+  Group entries: 9 days, 64.42 hours
+  Total potential days: 127 days
+  Total potential hours: 95.08 hours
+
+  Date coverage: 2024-12-31 to 2025-12-23
+  Total unique dates with any entry: 126
+
+====================================================================================================
+OPERATOR: Jesus Magdaleno
+====================================================================================================
+Search terms: Jesus Magdaleno, Magdaleno, Jesus
+
+--- STANDARDIZED ENTRIES (operator_standardized = 'Jesus Magdaleno') ---
+  Total entries: 32
+  Total hours: 49.43
+  Unique dates: 16
+  Date range: 2024-01-06 to 2025-09-11
+  Unique raw operator names mapped: 2
+  Raw names: JM, Jesus M
+
+--- RAW MATCHED ENTRIES (via aliases) ---
+  Total entries: 33
+  Total hours: 49.43
+  Unique dates: 17
+
+--- GROUP ENTRIES (containing this operator) ---
+  Total entries: 0
+  Total hours: 0.00
+  Unique dates: 0
+
+--- POTENTIAL UNMAPPED ENTRIES (fuzzy search) ---
+  Found 0 raw operator names containing search terms:
+
+--- SUMMARY ---
+  Standardized entries: 16 days, 49.43 hours
+  Group entries: 0 days, 0.00 hours
+  Total potential days: 16 days
+  Total potential hours: 49.43 hours
+
+  Date coverage: 2024-01-06 to 2025-09-11
+  Total unique dates with any entry: 16
+
+====================================================================================================
+OPERATOR: Carolina
+====================================================================================================
+Search terms: Carolina, Jacinta, Jacinta Membreno, Membreno, Jacinta
+
+--- STANDARDIZED ENTRIES (operator_standardized = 'Carolina') ---
+  Total entries: 181
+  Total hours: 7.75
+  Unique dates: 93
+  Date range: 2025-01-16 to 2025-12-18
+  Unique raw operator names mapped: 2
+  Raw names: CAROLINA, Carolina
+
+--- RAW MATCHED ENTRIES (via aliases) ---
+  Total entries: 181
+  Total hours: 7.75
+  Unique dates: 93
+
+--- GROUP ENTRIES (containing this operator) ---
+  Total entries: 10
+  Total hours: 50.67
+  Unique dates: 7
+  Example group entries:
+    2025-02-20: 'MICHELLE/CAROLINA' → 'Michelle + Others' (Dept: None, WO: None)
+    2025-05-30: 'Carolina, Rut' → 'Carolina + Others' (Dept: None, WO: 406801)
+    2025-06-02: 'Larry, Carolina, Larry' → 'Larry + Others' (Dept: None, WO: 406801)
+    2025-08-18: 'EVELYN+ CAROLINA' → 'Evelyn + Others' (Dept: None, WO: 2024547)
+    2025-09-15: 'EVELYN+ CAROLINA' → 'Evelyn + Others' (Dept: None, WO: 2024547)
+    2025-11-03: 'Bernardino-Carolina' → 'Bernie + Others' (Dept: None, WO: 4279)
+    2025-11-03: 'Bernardino-Carolina' → 'Bernie + Others' (Dept: None, WO: 4279)
+    2025-11-04: 'Bernardino-Carolina' → 'Bernie + Others' (Dept: None, WO: 4279)
+    2025-11-04: 'Bernardino-Carolina' → 'Bernie + Others' (Dept: None, WO: 4279)
+    2025-11-04: 'Bernardino-Carolina' → 'Bernie + Others' (Dept: None, WO: 4279)
+
+--- POTENTIAL UNMAPPED ENTRIES (fuzzy search) ---
+  Found 7 raw operator names containing search terms:
+    'Bernardino-Carolina' → currently mapped to 'Bernie + Others'
+      ⚠️  Maps to 'Bernie + Others' instead of 'Carolina'
+    'Carolina, Rut' → currently mapped to 'Carolina + Others'
+      ⚠️  Maps to 'Carolina + Others' instead of 'Carolina'
+    'EVELYN+ CAROLINA' → currently mapped to 'Evelyn + Others'
+      ⚠️  Maps to 'Evelyn + Others' instead of 'Carolina'
+    'Larry, Carolina, Larry' → currently mapped to 'Larry + Others'
+      ⚠️  Maps to 'Larry + Others' instead of 'Carolina'
+    'MICHELLE/CAROLINA' → currently mapped to 'Michelle + Others'
+      ⚠️  Maps to 'Michelle + Others' instead of 'Carolina'
+
+--- SUMMARY ---
+  Standardized entries: 93 days, 7.75 hours
+  Group entries: 7 days, 50.67 hours
+  Total potential days: 100 days
+  Total potential hours: 58.42 hours
+
+  Date coverage: 2025-01-16 to 2025-12-18
+  Total unique dates with any entry: 97
+
+====================================================================================================
+OPERATOR: Filiberto
+====================================================================================================
+Search terms: Filiberto, Filiberto Perez, Perez, Filiberto
+
+--- STANDARDIZED ENTRIES (operator_standardized = 'Filiberto') ---
+  Total entries: 183
+  Total hours: 0.50
+  Unique dates: 93
+  Date range: 2025-01-31 to 2025-12-17
+  Unique raw operator names mapped: 2
+  Raw names: FH, Filiberto
+
+--- RAW MATCHED ENTRIES (via aliases) ---
+  Total entries: 183
+  Total hours: 0.50
+  Unique dates: 93
+
+--- GROUP ENTRIES (containing this operator) ---
+  Total entries: 0
+  Total hours: 0.00
+  Unique dates: 0
+
+--- POTENTIAL UNMAPPED ENTRIES (fuzzy search) ---
+  Found 1 raw operator names containing search terms:
+
+--- SUMMARY ---
+  Standardized entries: 93 days, 0.50 hours
+  Group entries: 0 days, 0.00 hours
+  Total potential days: 93 days
+  Total potential hours: 0.50 hours
+
+  Date coverage: 2025-01-31 to 2025-12-17
+  Total unique dates with any entry: 93
+
+====================================================================================================
+OPERATOR: Kaleb
+====================================================================================================
+Search terms: Kaleb, Kaleb Starkey, Starkey, Kaleb
+
+--- STANDARDIZED ENTRIES (operator_standardized = 'Kaleb') ---
+  Total entries: 143
+  Total hours: 35.15
+  Unique dates: 56
+  Date range: 2025-05-19 to 2025-11-19
+  Unique raw operator names mapped: 2
+  Raw names: KS, Kaleb
+
+--- RAW MATCHED ENTRIES (via aliases) ---
+  Total entries: 143
+  Total hours: 35.15
+  Unique dates: 56
+
+--- GROUP ENTRIES (containing this operator) ---
+  Total entries: 4
+  Total hours: 0.00
+  Unique dates: 2
+  Example group entries:
+    2025-06-12: 'KS+DR' → 'Kaleb + Others' (Dept: Assembly, WO: ML110824-B12)
+    2025-06-12: 'KS+DR' → 'Kaleb + Others' (Dept: Assembly, WO: ML110824-B12)
+    2025-09-08: 'kaleb/marissa' → 'Kaleb + Others' (Dept: None, WO: 10089-2-BLANKET)
+    2025-09-08: 'kaleb/marissa' → 'Kaleb + Others' (Dept: None, WO: 10089-2-BLANKET)
+
+--- POTENTIAL UNMAPPED ENTRIES (fuzzy search) ---
+  Found 2 raw operator names containing search terms:
+    'kaleb/marissa' → currently mapped to 'Kaleb + Others'
+      ⚠️  Maps to 'Kaleb + Others' instead of 'Kaleb'
+
+--- SUMMARY ---
+  Standardized entries: 56 days, 35.15 hours
+  Group entries: 2 days, 0.00 hours
+  Total potential days: 58 days
+  Total potential hours: 35.15 hours
+
+  Date coverage: 2025-05-19 to 2025-11-19
+  Total unique dates with any entry: 57
+
+====================================================================================================
+OVERALL SUMMARY
+====================================================================================================
+
+Total standardized entries across all operators:
+  Days: 376
+  Hours: 123.50
+
+Total group entries across all operators:
+  Days: 18
+  Hours: 115.08
+
+Total potential (standardized + group):
+  Days: 394
+  Hours: 238.58
+
+====================================================================================================
+CONCLUSION
+====================================================================================================
+
+This report shows:
+1. All QC entries that are currently matched to each operator (standardized)
+2. Group entries that might contain work by these operators
+3. Potential unmapped entries that might belong to these operators
+
+Compare these numbers to the 'comparison days' in the time comparison report
+to determine if there are missing matches.

@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import-qc": "ts-node scripts/import-qc-sheets.ts"
+    "import-qc": "ts-node scripts/import-qc-sheets.ts",
+    "migrate-db": "ts-node scripts/migrate-database.ts",
+    "check-setup": "ts-node scripts/check-setup.ts",
+    "test-asana": "node scripts/test-asana-connection.js",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",
-    "asana": "^3.1.5",
+    "asana": "^1.0.5",
     "better-sqlite3": "^12.5.0",
     "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",

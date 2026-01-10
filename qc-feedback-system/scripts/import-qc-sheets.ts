@@ -1,3 +1,14 @@
+/**
+ * IMPORTANT: This script uses the old schema format.
+ * The database now uses the unified schema (qc_unified.db).
+ * 
+ * For importing historical Excel data, consider using the Python scripts in:
+ * QC_Data/scripts/build_unified_qc_database.py
+ * 
+ * If you need to use this script, it should be updated to use the unified schema
+ * with data_source='excel_v2' and proper field mapping (entry_date instead of date, etc.)
+ */
+
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';

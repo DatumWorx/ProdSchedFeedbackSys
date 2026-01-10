@@ -14,24 +14,57 @@ A Next.js application to replace the current QC Sheet process with a digital sys
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+⚠️ **Important: Node.js Version Requirement**
+- **Node.js 20.9.0 or higher** is required (Next.js 16.1.1 requirement)
+- Current system: Node.js 18.20.8 (needs upgrade)
+- Check your version: `node --version`
+- Upgrade using [nvm](https://github.com/nvm-sh/nvm) or download from [nodejs.org](https://nodejs.org/)
+
 - Asana Personal Access Token
 - Asana Workspace GID
 
 ### Installation
 
-1. Install dependencies:
+1. **Upgrade Node.js** (if needed):
+   ```bash
+   # Using nvm (recommended)
+   nvm install 20
+   nvm use 20
+   
+   # Or download from nodejs.org
+   ```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Create a `.env.local` file in the root directory:
+3. Create a `.env.local` file in the root directory:
 ```env
+# Required: Asana API Configuration
+# Get your Personal Access Token from: https://app.asana.com/0/developer-console
 ASANA_TOKEN=your_asana_personal_access_token_here
-ASANA_WORKSPACE_GID=your_workspace_gid_here
+
+# Required: Asana Workspace GID
+# Find your workspace GID from the Asana API or workspace settings
+ASANA_WORKSPACE_GID=1139018700565569
+
+# Optional: Individual department project GIDs (already configured in lib/asana.ts)
+# WATER_JETS_PROJECT_GID=1209296874456267
+# ROUTERS_PROJECT_GID=1211016974304211
+# SAWS_PROJECT_GID=1211016974322485
+# PRESSES_PROJECT_GID=1211016974322479
+# ASSEMBLY_PROJECT_GID=1211016974322491
+# SAMPLING_PROJECT_GID=1211017167732352
 ```
 
-3. Initialize the database (runs automatically on first import):
+4. **Run database migration** (if using existing database):
+```bash
+# If you have an existing database, run migration to update schema
+npx ts-node scripts/migrate-database.ts
+```
+
+5. Initialize the database (runs automatically on first import):
 ```bash
 npm run dev
 ```
@@ -149,7 +182,17 @@ Custom field GIDs are defined in `lib/asana.ts` based on the SDP documentation. 
 
 ### Database
 
-The SQLite database is automatically initialized when the application starts. The database file is created at `data/qc_feedback.db`.
+The SQLite database is automatically initialized when the application starts. The database file is located at `../QC_Data/databases/qc_unified.db` (shared with the QC data system).
+
+#### Database Migration
+
+If you have an existing database, you may need to run a migration to update the schema:
+
+```bash
+npx ts-node scripts/migrate-database.ts
+```
+
+This migration adds the `UNIQUE` constraint to `departments.asana_project_gid` to support proper foreign key relationships.
 
 ### TypeScript
 
@@ -164,6 +207,23 @@ Run ESLint:
 ```bash
 npm run lint
 ```
+
+### Troubleshooting
+
+#### Node.js Version Error
+If you see: `You are using Node.js 18.x. For Next.js, Node.js version ">=20.9.0" is required`
+- **Solution:** Upgrade Node.js to version 20.9.0 or higher
+- Use `nvm` or download from nodejs.org
+
+#### Database Migration Errors
+If migration fails due to duplicate `asana_project_gid` values:
+- Check for duplicates: The migration script will report any duplicates
+- Remove or fix duplicate entries before running migration again
+
+#### Asana API Errors
+- Verify `ASANA_TOKEN` is valid and has necessary permissions
+- Verify `ASANA_WORKSPACE_GID` is correct
+- Check Asana API rate limits (150 requests per 15 minutes per project)
 
 ## Notes
 
