@@ -29,6 +29,7 @@ export const CUSTOM_FIELDS = {
   EST_START_DATE: '1211594523120745',
   EST_DUE_DATE: '1211594524354161',
   PERCENTAGE_COMPLETE: '1211673243352085',
+  MATERIAL: '1209784439507743',
 } as const;
 
 // Department project GIDs (from asana_blueprint.md)

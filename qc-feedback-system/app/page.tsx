@@ -216,6 +216,28 @@ export default function Home() {
 
   const selectedTask = tasks.find(t => t.gid === selectedPart);
 
+  // Helper function to get custom field value by name
+  const getCustomFieldValue = (fieldName: string): any => {
+    if (!selectedTask?.customFields) return null;
+    const field = Object.values(selectedTask.customFields).find(
+      (f: any) => f.name === fieldName
+    );
+    return field?.value ?? null;
+  };
+
+  // Extract specific fields
+  const totalTime = getCustomFieldValue('Total Time');
+  const qty = getCustomFieldValue('Qty Parts');
+  const material = getCustomFieldValue('Material');
+  const scheduledPPM = getCustomFieldValue('Scheduled PPM');
+  const actualPPM = getCustomFieldValue('Actual PPM');
+
+  // Calculate Scheduling Accuracy (Actual PPM / Scheduled PPM) × 100
+  const schedulingAccuracy = 
+    scheduledPPM && actualPPM && scheduledPPM !== 0
+      ? ((actualPPM / scheduledPPM) * 100).toFixed(1) + '%'
+      : 'N/A';
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
@@ -345,55 +367,96 @@ export default function Home() {
         {selectedTask && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-6 text-gray-900">Part Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <p className="text-base font-medium text-gray-700">Task Name</p>
-                <p className="text-lg text-gray-900">{selectedTask.name}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-medium text-gray-700">Section</p>
-                <p className="text-lg text-gray-900">{selectedTask.section}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-medium text-gray-700">Start Date/Time</p>
-                <p className="text-lg text-gray-900">
-                  {selectedTask.startDate ? new Date(selectedTask.startDate).toLocaleString() : 'Not set'}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-medium text-gray-700">Due Date/Time</p>
-                <p className="text-lg text-gray-900">
-                  {selectedTask.dueDate ? new Date(selectedTask.dueDate).toLocaleString() : 'Not set'}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-base font-medium text-gray-700">Machine</p>
-                <p className="text-lg text-gray-900">{selectedTask.machine || 'Not assigned'}</p>
+            
+            {/* Basic Information */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Task Name</p>
+                  <p className="text-base text-gray-900">{selectedTask.name}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Section</p>
+                  <p className="text-base text-gray-900">{selectedTask.section || 'Not set'}</p>
+                </div>
               </div>
             </div>
 
-            {/* Custom Fields */}
-            {Object.keys(selectedTask.customFields).length > 0 && (
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900">Custom Fields</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(selectedTask.customFields).map(([gid, field]: [string, any]) => (
-                    <div key={gid} className="border-l-4 border-blue-500 pl-4 py-2 space-y-1">
-                      <p className="text-base font-medium text-gray-700">{field.name}</p>
-                      <p className="text-lg text-gray-900">
-                        {field.value !== null && field.value !== undefined
-                          ? String(field.value)
-                          : 'Not set'}
-                      </p>
-                    </div>
-                  ))}
+            {/* Scheduling Information */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Scheduling Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Start Date/Time</p>
+                  <p className="text-base text-gray-900">
+                    {selectedTask.startDate ? new Date(selectedTask.startDate).toLocaleString() : 'Not set'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Due Date/Time</p>
+                  <p className="text-base text-gray-900">
+                    {selectedTask.dueDate ? new Date(selectedTask.dueDate).toLocaleString() : 'Not set'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Machine</p>
+                  <p className="text-base text-gray-900">{selectedTask.machine || 'Not assigned'}</p>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Production Information */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Production Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Total Time</p>
+                  <p className="text-base text-gray-900">
+                    {totalTime !== null && totalTime !== undefined ? `${totalTime} min` : 'Not set'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Qty</p>
+                  <p className="text-base text-gray-900">
+                    {qty !== null && qty !== undefined ? qty : 'Not set'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Material</p>
+                  <p className="text-base text-gray-900">
+                    {material !== null && material !== undefined ? String(material) : 'Not set'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Performance Metrics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Scheduled PPM</p>
+                  <p className="text-base text-gray-900">
+                    {scheduledPPM !== null && scheduledPPM !== undefined ? scheduledPPM.toFixed(4) : 'Not set'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Actual PPM</p>
+                  <p className="text-base text-gray-900">
+                    {actualPPM !== null && actualPPM !== undefined ? actualPPM.toFixed(4) : 'Not set'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Scheduling Accuracy</p>
+                  <p className="text-base text-gray-900">{schedulingAccuracy}</p>
+                </div>
+              </div>
+            </div>
 
             {/* PDF Attachments */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900">PDF Attachments</h3>
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">PDF Attachment</h3>
               {loadingAttachments ? (
                 <p className="text-gray-600">Loading attachments...</p>
               ) : attachments.length > 0 ? (
