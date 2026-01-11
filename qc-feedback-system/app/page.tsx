@@ -228,9 +228,10 @@ export default function Home() {
   // Extract specific fields
   const totalTime = getCustomFieldValue('Total Time');
   const qty = getCustomFieldValue('Qty Parts');
-  const material = getCustomFieldValue('Material');
+  const pickList = getCustomFieldValue('Pick List');
   const scheduledPPM = getCustomFieldValue('Scheduled PPM');
   const actualPPM = getCustomFieldValue('Actual PPM');
+  const shiftsScheduled = getCustomFieldValue('Shifts');
 
   // Calculate Scheduling Accuracy (Actual PPM / Scheduled PPM) × 100
   const schedulingAccuracy = 
@@ -403,6 +404,12 @@ export default function Home() {
                   <p className="text-sm font-medium text-gray-600">Machine</p>
                   <p className="text-base text-gray-900">{selectedTask.machine || 'Not assigned'}</p>
                 </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-600">Runtime in Shifts</p>
+                  <p className="text-base text-gray-900">
+                    {shiftsScheduled !== null && shiftsScheduled !== undefined ? shiftsScheduled : 'Not set'}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -425,7 +432,7 @@ export default function Home() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-gray-600">Material</p>
                   <p className="text-base text-gray-900">
-                    {material !== null && material !== undefined ? String(material) : 'Not set'}
+                    {pickList !== null && pickList !== undefined ? String(pickList) : 'Not set'}
                   </p>
                 </div>
               </div>
