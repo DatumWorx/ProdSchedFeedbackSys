@@ -39,16 +39,23 @@ export function initDatabase() {
   // Note: qc_entries table is already defined in the unified database schema
   // We only need to create app-specific tables here
 
-  // Operators table - from Variables sheet
+  // Operators table - comprehensive employee information
   db.exec(`
     CREATE TABLE IF NOT EXISTS operators (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL,
-      department TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      date_of_hire DATE,
+      pay_rate REAL,
+      role TEXT,
+      primary_dept TEXT,
+      certified_departments TEXT,  -- JSON array of department names
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE INDEX IF NOT EXISTS idx_operators_department ON operators(department);
+    CREATE INDEX IF NOT EXISTS idx_operators_name ON operators(name);
+    CREATE INDEX IF NOT EXISTS idx_operators_role ON operators(role);
+    CREATE INDEX IF NOT EXISTS idx_operators_primary_dept ON operators(primary_dept);
   `);
 
   // Departments table

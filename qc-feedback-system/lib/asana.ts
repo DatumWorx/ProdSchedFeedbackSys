@@ -41,7 +41,7 @@ export const DEPARTMENT_PROJECTS: Record<string, string> = {
   'Sampling': '1211017167732352',
 };
 
-// Get all production department projects
+// Get all Production Department projects (Department = Production Department = Asana Project)
 export async function getDepartmentProjects() {
   const client = getAsanaClient();
   const workspaceGid = process.env.ASANA_WORKSPACE_GID;
@@ -56,7 +56,7 @@ export async function getDepartmentProjects() {
 
   const projects = projectsResponse.data || [];
 
-  // Filter for production departments using DEPARTMENT_PROJECTS keys for consistency
+  // Filter for Production Departments using DEPARTMENT_PROJECTS keys for consistency
   const productionDepartments = Object.keys(DEPARTMENT_PROJECTS);
   const filteredProjects = projects.filter((p: any) => productionDepartments.includes(p.name));
   
@@ -161,7 +161,7 @@ export async function getTaskDetails(taskGid: string) {
     }
   }
 
-  // Extract Prod Dept (machine) from custom fields
+  // Extract Machine (Prod Dept custom field) from custom fields
   const prodDeptField = task.custom_fields?.find(
     (f: any) => f.gid === CUSTOM_FIELDS.PROD_DEPT
   );

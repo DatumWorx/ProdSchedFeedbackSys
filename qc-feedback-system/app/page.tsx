@@ -50,7 +50,7 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
 
-  // Load departments on mount
+  // Load Production Departments (Asana Projects) on mount
   useEffect(() => {
     fetch('/api/departments')
       .then(res => res.json())
@@ -62,7 +62,7 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
-  // Load machines when department changes
+  // Load Machines (Prod Dept custom field enum values) when Department changes
   useEffect(() => {
     if (!selectedDepartment) {
       setMachines([]);
@@ -70,16 +70,33 @@ export default function Home() {
     }
 
     fetch(`/api/machines?department=${encodeURIComponent(selectedDepartment)}`)
-      .then(res => res.json())
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+          console.error(`HTTP error! status: ${res.status}`, data);
+          throw new Error(data.error || `HTTP error! status: ${res.status}`);
+        }
+        return data;
+      })
       .then(data => {
-        if (data.machines) {
+        if (data.error) {
+          console.error('Error from machines API:', data.error, data.details || '');
+          setMachines([]);
+        } else if (data.machines) {
           setMachines(data.machines);
+        } else {
+          console.warn('No machines data in response:', data);
+          setMachines([]);
         }
       })
-      .catch(console.error);
+      .catch(err => {
+        console.error('Error fetching machines:', err);
+        setMachines([]);
+      });
   }, [selectedDepartment]);
 
-  // Load operators when department changes
+  // Load Operators when Department changes
+  // Note: Operators are stored in DB for pay scale/utilization tracking, not used for filtering
   useEffect(() => {
     fetch(`/api/operators${selectedDepartment ? `?department=${encodeURIComponent(selectedDepartment)}` : ''}`)
       .then(res => res.json())
@@ -91,7 +108,14 @@ export default function Home() {
       .catch(console.error);
   }, [selectedDepartment]);
 
-  // Load tasks when project and machine are selected
+  // Load Parts (Tasks) when Department is selected
+  // Domain Model:
+  //   - Department = Production Department (corresponds to Asana Project)
+  //   - Machine = Prod Dept custom field value
+  //   - Operator = who is running the job (stored in DB for pay scale/utilization tracking)
+  //   - Part = Tasks on the selected Production Department, filtered by Prod Dept custom field if Machine is selected
+  // Note: Tasks are NOT filtered by operator - operators are selected manually for logging data
+  // Tasks are filtered by the selected department's project (required), then optionally by Machine (Prod Dept custom field)
   useEffect(() => {
     if (!selectedDepartment) {
       setTasks([]);
@@ -103,7 +127,10 @@ export default function Home() {
     if (!department) return;
 
     setLoading(true);
-    fetch(`/api/tasks?projectGid=${department.gid}${selectedMachine ? `&machine=${encodeURIComponent(selectedMachine)}` : ''}`)
+    // Filter Parts (Tasks) by the selected department's project GID
+    // Then optionally filter by Machine (Prod Dept custom field) if Machine is selected
+    const projectGid = department.gid; // Department is an Asana Project, so gid is the project GID
+    fetch(`/api/tasks?projectGid=${projectGid}${selectedMachine ? `&machine=${encodeURIComponent(selectedMachine)}` : ''}`)
       .then(res => res.json())
       .then(data => {
         if (data.tasks) {
@@ -119,6 +146,37 @@ export default function Home() {
         setLoading(false);
       });
   }, [selectedDepartment, selectedMachine, departments]);
+
+  // Auto-select Machine (Prod Dept custom field) when a Part (Task) is selected
+  useEffect(() => {
+    if (!selectedPart || machines.length === 0) {
+      return;
+    }
+
+    const task = tasks.find(t => t.gid === selectedPart);
+    if (!task) return;
+
+    // Get Machine (Prod Dept custom field) value from the Part's machine field or custom fields
+    let taskMachine: string | null = null;
+    
+    if (task.machine) {
+      taskMachine = task.machine;
+    } else if (task.customFields) {
+      // Try to find Prod Dept custom field (GID: 1210998867548457)
+      const prodDeptField = Object.values(task.customFields).find(
+        (field: any) => field.name === 'Prod Dept' || field.gid === '1210998867548457'
+      );
+      if (prodDeptField && prodDeptField.value) {
+        taskMachine = String(prodDeptField.value);
+      }
+    }
+
+    // If Part has a Machine value and it's in the available machines list, auto-select it
+    // Only update if the machine is different to avoid unnecessary reloads
+    if (taskMachine && taskMachine !== selectedMachine && machines.some(m => m.name === taskMachine)) {
+      setSelectedMachine(taskMachine);
+    }
+  }, [selectedPart, tasks, machines, selectedMachine]);
 
   const selectedTask = tasks.find(t => t.gid === selectedPart);
 
@@ -145,7 +203,7 @@ export default function Home() {
                   setSelectedMachine('');
                   setSelectedPart('');
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="">Select Department</option>
                 {departments.map(dept => (
@@ -168,7 +226,7 @@ export default function Home() {
                   setSelectedPart('');
                 }}
                 disabled={!selectedDepartment}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
               >
                 <option value="">Select Machine</option>
                 {machines.map(machine => (
@@ -188,7 +246,7 @@ export default function Home() {
                 value={selectedOperator}
                 onChange={(e) => setSelectedOperator(e.target.value)}
                 disabled={!selectedDepartment}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
               >
                 <option value="">Select Operator</option>
                 {operators.map(op => (
@@ -208,7 +266,7 @@ export default function Home() {
                 value={selectedPart}
                 onChange={(e) => setSelectedPart(e.target.value)}
                 disabled={!selectedDepartment || loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
               >
                 <option value="">Select Part</option>
                 {loading ? (
@@ -225,46 +283,46 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Task Details */}
+        {/* Part (Task) Details */}
         {selectedTask && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Task Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Task Name</p>
-                <p className="font-medium">{selectedTask.name}</p>
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">Part Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-base font-medium text-gray-700">Task Name</p>
+                <p className="text-lg text-gray-900">{selectedTask.name}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Section</p>
-                <p className="font-medium">{selectedTask.section}</p>
+              <div className="space-y-1">
+                <p className="text-base font-medium text-gray-700">Section</p>
+                <p className="text-lg text-gray-900">{selectedTask.section}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Start Date/Time</p>
-                <p className="font-medium">
+              <div className="space-y-1">
+                <p className="text-base font-medium text-gray-700">Start Date/Time</p>
+                <p className="text-lg text-gray-900">
                   {selectedTask.startDate ? new Date(selectedTask.startDate).toLocaleString() : 'Not set'}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Due Date/Time</p>
-                <p className="font-medium">
+              <div className="space-y-1">
+                <p className="text-base font-medium text-gray-700">Due Date/Time</p>
+                <p className="text-lg text-gray-900">
                   {selectedTask.dueDate ? new Date(selectedTask.dueDate).toLocaleString() : 'Not set'}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Machine</p>
-                <p className="font-medium">{selectedTask.machine || 'Not assigned'}</p>
+              <div className="space-y-1">
+                <p className="text-base font-medium text-gray-700">Machine</p>
+                <p className="text-lg text-gray-900">{selectedTask.machine || 'Not assigned'}</p>
               </div>
             </div>
 
             {/* Custom Fields */}
             {Object.keys(selectedTask.customFields).length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold mb-3">Custom Fields</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Custom Fields</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(selectedTask.customFields).map(([gid, field]: [string, any]) => (
-                    <div key={gid} className="border-l-4 border-blue-500 pl-3">
-                      <p className="text-sm text-gray-600">{field.name}</p>
-                      <p className="font-medium">
+                    <div key={gid} className="border-l-4 border-blue-500 pl-4 py-2 space-y-1">
+                      <p className="text-base font-medium text-gray-700">{field.name}</p>
+                      <p className="text-lg text-gray-900">
                         {field.value !== null && field.value !== undefined
                           ? String(field.value)
                           : 'Not set'}
@@ -277,10 +335,10 @@ export default function Home() {
           </div>
         )}
 
-        {/* Last 3 Completed Tasks */}
+        {/* Last 3 Completed Parts (Tasks) */}
         {completedTasks.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Last 3 Completed Tasks</h2>
+            <h2 className="text-xl font-semibold mb-4">Last 3 Completed Parts</h2>
             <div className="space-y-4">
               {completedTasks.map(task => (
                 <div key={task.gid} className="border-l-4 border-green-500 pl-4 py-2">

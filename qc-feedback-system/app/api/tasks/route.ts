@@ -15,10 +15,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get tasks from Asana
+    // Get Parts (Tasks) from Asana for the specified Production Department (project)
+    // Note: Tasks are NOT filtered by operator - operators are selected manually for logging
     let tasks = await getProjectTasks(projectGid);
 
-    // Filter by machine if specified
+    // Filter by Machine (Prod Dept custom field) if specified - optional filter
+    // If Machine is not selected, show all Parts (Tasks) in the department project
     if (machine) {
       tasks = tasks.filter((t: any) => t.machine_name === machine);
     }
@@ -30,7 +32,7 @@ export async function GET(request: Request) {
       return aDate.localeCompare(bDate);
     });
 
-    // Get last 3 completed tasks
+    // Get last 3 completed Parts (Tasks) from the department project
     const completedTasks = db
       .prepare(`
         SELECT task_gid, task_name, section_name, start_date, due_date, custom_fields_json

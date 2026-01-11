@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDepartmentProjects, DEPARTMENT_PROJECTS } from '@/lib/asana';
 
+// Domain Model: Department = Production Department (corresponds to Asana Project)
 export async function GET() {
   try {
     const departments = await getDepartmentProjects();

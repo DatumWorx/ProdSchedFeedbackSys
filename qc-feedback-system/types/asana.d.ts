@@ -10,8 +10,9 @@ declare module 'asana' {
       getTasksForSection(sectionGid: string, options?: any): Promise<any>;
       getTask(taskGid: string, options?: any): Promise<any>;
     };
-    customFields: {
-      getCustomField(fieldGid: string, options?: any): Promise<any>;
+    customfields: {
+      findByWorkspace(workspaceGid: string, options?: any): Promise<any>;
+      findById(customFieldGid: string, options?: any): Promise<any>;
     };
     users: {
       getUser(userGid: string, options?: any): Promise<any>;

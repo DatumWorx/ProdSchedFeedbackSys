@@ -1,34 +1,20 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
+// Domain Model: Operator = who is running the job (stored in DB for pay scale/utilization tracking)
+// Note: Operators are NOT used for filtering tasks - they are selected manually for logging data
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const department = searchParams.get('department');
+    // Always return all operators, regardless of department parameter
+    // Department filtering is disabled - all operators show on all projects
+    // Operators are for logging/utilization tracking, not for filtering
+    const operators = db
+      .prepare('SELECT DISTINCT name FROM operators ORDER BY name')
+      .all();
 
-    let operators;
-    if (department) {
-      operators = db
-        .prepare('SELECT DISTINCT name FROM operators WHERE department = ? OR department IS NULL ORDER BY name')
-        .all(department);
-    } else {
-      operators = db
-        .prepare('SELECT DISTINCT name FROM operators ORDER BY name')
-        .all();
-    }
-
-    // Also get unique operators from QC entries
-    const qcOperators = db
-      .prepare('SELECT DISTINCT operator as name FROM qc_entries WHERE operator IS NOT NULL ORDER BY operator')
-      .all() as Array<{ name: string }>;
-
-    // Combine and deduplicate
-    const allOperators = new Set<string>();
-    operators.forEach((op: any) => allOperators.add(op.name));
-    qcOperators.forEach((op) => allOperators.add(op.name));
-
+    // Return operators with just the name
     return NextResponse.json({
-      operators: Array.from(allOperators).sort().map(name => ({ name })),
+      operators: operators.map((op: any) => ({ name: op.name })),
     });
   } catch (error: any) {
     console.error('Error fetching operators:', error);
