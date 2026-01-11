@@ -51,7 +51,7 @@ export async function getDepartmentProjects() {
     throw new Error('ASANA_WORKSPACE_GID environment variable is not set');
   }
 
-  const projectsResponse = await client.projects.getProjectsForWorkspace(workspaceGid, {
+  const projectsResponse = await (client.projects as any).getProjectsForWorkspace(workspaceGid, {
     opt_fields: 'gid,name,notes',
   });
 
@@ -78,7 +78,7 @@ export async function getProjectTasks(projectGid: string) {
   const client = getAsanaClient();
   
   // Get all sections in the project
-  const sectionsResponse = await client.sections.getSectionsForProject(projectGid, {
+  const sectionsResponse = await (client.sections as any).getSectionsForProject(projectGid, {
     opt_fields: 'gid,name',
   });
 
@@ -133,7 +133,7 @@ export async function getCompletedTasks(projectGid: string, limit: number = 3) {
   const client = getAsanaClient();
   
   // Get all sections in the project
-  const sectionsResponse = await client.sections.getSectionsForProject(projectGid, {
+  const sectionsResponse = await (client.sections as any).getSectionsForProject(projectGid, {
     opt_fields: 'gid,name',
   });
 
@@ -207,7 +207,7 @@ export async function getTaskAttachments(taskGid: string) {
       if (name.toLowerCase().endsWith('.pdf')) {
         try {
           // Get detailed attachment info to get download_url
-          const attachmentDetail = await client.attachments.getAttachment(attachment.gid, {
+          const attachmentDetail = await (client.attachments as any).getAttachment(attachment.gid, {
             opt_fields: 'gid,name,resource_subtype,download_url,view_url,created_at',
           });
           
@@ -254,17 +254,18 @@ export async function getTaskDetails(taskGid: string) {
   if (task.custom_fields) {
     for (const field of task.custom_fields) {
       let value: any = null;
+      const fieldAny = field as any;
       
       if (field.type === 'number') {
         value = field.number_value;
       } else if (field.type === 'text') {
-        value = field.text_value;
+        value = fieldAny.text_value;
       } else if (field.type === 'enum') {
         value = field.enum_value?.name || null;
       } else if (field.type === 'date') {
-        value = field.date_value;
+        value = fieldAny.date_value;
       } else if (field.type === 'multi_enum') {
-        value = field.multi_enum_values?.map((v: any) => v.name) || [];
+        value = fieldAny.multi_enum_values?.map((v: any) => v.name) || [];
       }
 
       customFields[field.gid] = {

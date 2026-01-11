@@ -61,6 +61,15 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
 
+  // Work session state
+  const [activeSession, setActiveSession] = useState<any>(null);
+  const [allSessions, setAllSessions] = useState<any[]>([]);
+  const [runningTotal, setRunningTotal] = useState<number>(0);
+  const [checkingSession, setCheckingSession] = useState(false);
+  const [partsCount, setPartsCount] = useState<string>('');
+  const [submittingParts, setSubmittingParts] = useState(false);
+  const [endingSession, setEndingSession] = useState(false);
+
   // Load Production Departments (Asana Projects) on mount
   useEffect(() => {
     fetch('/api/departments')
@@ -214,6 +223,58 @@ export default function Home() {
       });
   }, [selectedPart]);
 
+  // Check for active work session when operator or part changes
+  useEffect(() => {
+    if (!selectedPart) {
+      setActiveSession(null);
+      setAllSessions([]);
+      setRunningTotal(0);
+      return;
+    }
+
+    if (!selectedOperator) {
+      // Still fetch all sessions even if no operator selected
+      setCheckingSession(true);
+      fetch(`/api/work-session?operator=&partGid=${encodeURIComponent(selectedPart)}`)
+        .then(res => res.json())
+        .then(data => {
+          setAllSessions(data.allSessions || []);
+          setRunningTotal(data.runningTotal || 0);
+          setActiveSession(null);
+          setCheckingSession(false);
+        })
+        .catch(err => {
+          console.error('Error fetching work sessions:', err);
+          setAllSessions([]);
+          setRunningTotal(0);
+          setActiveSession(null);
+          setCheckingSession(false);
+        });
+      return;
+    }
+
+    setCheckingSession(true);
+    fetch(`/api/work-session?operator=${encodeURIComponent(selectedOperator)}&partGid=${encodeURIComponent(selectedPart)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.active && data.session) {
+          setActiveSession(data.session);
+        } else {
+          setActiveSession(null);
+        }
+        setAllSessions(data.allSessions || []);
+        setRunningTotal(data.runningTotal || 0);
+        setCheckingSession(false);
+      })
+      .catch(err => {
+        console.error('Error checking work session:', err);
+        setActiveSession(null);
+        setAllSessions([]);
+        setRunningTotal(0);
+        setCheckingSession(false);
+      });
+  }, [selectedOperator, selectedPart]);
+
   const selectedTask = tasks.find(t => t.gid === selectedPart);
 
   // Helper function to get custom field value by name
@@ -238,6 +299,139 @@ export default function Home() {
     scheduledPPM && actualPPM && scheduledPPM !== 0
       ? ((actualPPM / scheduledPPM) * 100).toFixed(1) + '%'
       : 'N/A';
+
+  // Work session handlers
+  const handleStartWork = async () => {
+    if (!selectedOperator || !selectedPart) {
+      alert('Please select an operator and part');
+      return;
+    }
+
+    try {
+      const department = departments.find(d => d.name === selectedDepartment);
+      const partName = selectedTask?.name || null;
+      
+      const response = await fetch('/api/work-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operatorName: selectedOperator,
+          partGid: selectedPart,
+          partName: partName,
+          department: selectedDepartment || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to start work session');
+        return;
+      }
+
+      setActiveSession(data.session);
+      // Refresh all sessions
+      const refreshResponse = await fetch(`/api/work-session?operator=${encodeURIComponent(selectedOperator)}&partGid=${encodeURIComponent(selectedPart)}`);
+      const refreshData = await refreshResponse.json();
+      setAllSessions(refreshData.allSessions || []);
+      setRunningTotal(refreshData.runningTotal || 0);
+      alert('Work session started successfully');
+    } catch (error) {
+      console.error('Error starting work session:', error);
+      alert('Failed to start work session');
+    }
+  };
+
+  const handleSubmitPartsCount = async () => {
+    if (!activeSession) {
+      alert('No active work session');
+      return;
+    }
+
+    const parts = parseInt(partsCount);
+    if (isNaN(parts) || parts < 0) {
+      alert('Please enter a valid parts count');
+      return;
+    }
+
+    setSubmittingParts(true);
+    try {
+      const response = await fetch('/api/work-session', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: activeSession.id,
+          partsCount: parts,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to submit parts count');
+        return;
+      }
+
+      // Refresh sessions to get updated data
+      const refreshResponse = await fetch(`/api/work-session?operator=${encodeURIComponent(selectedOperator)}&partGid=${encodeURIComponent(selectedPart)}`);
+      const refreshData = await refreshResponse.json();
+      if (refreshData.active && refreshData.session) {
+        setActiveSession(refreshData.session);
+      }
+      setAllSessions(refreshData.allSessions || []);
+      setRunningTotal(refreshData.runningTotal || 0);
+      setPartsCount('');
+      alert('Parts count submitted successfully');
+    } catch (error) {
+      console.error('Error submitting parts count:', error);
+      alert('Failed to submit parts count');
+    } finally {
+      setSubmittingParts(false);
+    }
+  };
+
+  const handleEndWork = async () => {
+    if (!activeSession) {
+      alert('No active work session');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to end this work session? This will create a QC entry.')) {
+      return;
+    }
+
+    setEndingSession(true);
+    try {
+      const response = await fetch('/api/work-session', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: activeSession.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to end work session');
+        return;
+      }
+
+      // Refresh sessions to get updated data
+      const refreshResponse = await fetch(`/api/work-session?operator=${encodeURIComponent(selectedOperator)}&partGid=${encodeURIComponent(selectedPart)}`);
+      const refreshData = await refreshResponse.json();
+      setActiveSession(refreshData.active && refreshData.session ? refreshData.session : null);
+      setAllSessions(refreshData.allSessions || []);
+      setRunningTotal(refreshData.runningTotal || 0);
+      setPartsCount('');
+      alert('Work session ended successfully. QC entry created.');
+    } catch (error) {
+      console.error('Error ending work session:', error);
+      alert('Failed to end work session');
+    } finally {
+      setEndingSession(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -363,6 +557,126 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Job Status */}
+        {selectedPart && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">Job Status</h2>
+            
+            {checkingSession ? (
+              <p className="text-gray-600">Loading job status...</p>
+            ) : (
+              <div className="space-y-6">
+                {/* Running Total */}
+                {selectedTask && qty && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-lg font-semibold text-gray-900">
+                      {runningTotal} of {qty} parts {selectedDepartment ? `cut in ${selectedDepartment}` : 'produced'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Active Sessions by Other Operators */}
+                {allSessions.filter(s => s.end_timestamp === null && (!selectedOperator || s.operator_name !== selectedOperator)).length > 0 && (
+                  <div>
+                    <h3 className="text-md font-semibold text-gray-800 mb-3">Active Sessions by Other Operators</h3>
+                    <div className="space-y-2">
+                      {allSessions
+                        .filter(s => s.end_timestamp === null && (!selectedOperator || s.operator_name !== selectedOperator))
+                        .map(session => (
+                          <div key={session.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p className="text-sm font-medium text-gray-800">
+                              <strong>{session.operator_name}</strong> - Started: {new Date(session.start_timestamp).toLocaleString()}
+                            </p>
+                            {session.total_parts_produced > 0 && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Parts produced: <strong>{session.total_parts_produced}</strong>
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Current Operator's Workflow */}
+                {selectedOperator ? (
+                  !activeSession ? (
+                    <div className="space-y-4">
+                      <p className="text-gray-700">
+                        No active work session for <strong>{selectedOperator}</strong> on part <strong>{selectedTask?.name || selectedPart}</strong>
+                      </p>
+                      <button
+                        onClick={handleStartWork}
+                        className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                      >
+                        Start Work
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-gray-800 font-medium mb-2">
+                          Active work session for <strong>{selectedOperator}</strong>
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Started: {new Date(activeSession.start_timestamp).toLocaleString()}
+                        </p>
+                        {activeSession.total_parts_produced > 0 && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Parts produced: <strong>{activeSession.total_parts_produced}</strong>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Parts Count
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={partsCount}
+                            onChange={(e) => setPartsCount(e.target.value)}
+                            placeholder="Enter parts count"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                          />
+                        </div>
+                        
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <p className="text-sm text-gray-700">
+                            <strong>Important:</strong> Please track your parts produced and log parts before breaks and at the end of running the job.
+                          </p>
+                        </div>
+
+                        <div className="flex gap-4">
+                          <button
+                            onClick={handleSubmitPartsCount}
+                            disabled={submittingParts || !partsCount}
+                            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {submittingParts ? 'Submitting...' : 'Submit Parts Count'}
+                          </button>
+                          
+                          <button
+                            onClick={handleEndWork}
+                            disabled={endingSession}
+                            className="px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {endingSession ? 'Ending...' : 'End Work'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-gray-600">Select an operator to start work on this part.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Part (Task) Details */}
         {selectedTask && (
@@ -530,7 +844,7 @@ export default function Home() {
 
         {/* Last 3 Completed Parts (Tasks) */}
         {completedTasks.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Last 3 Completed Parts</h2>
             <div className="space-y-4">
               {completedTasks.map(task => (
@@ -544,6 +858,7 @@ export default function Home() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

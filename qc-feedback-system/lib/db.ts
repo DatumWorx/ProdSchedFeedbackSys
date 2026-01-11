@@ -103,6 +103,26 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_tasks_section ON asana_tasks_cache(section_name);
     CREATE INDEX IF NOT EXISTS idx_tasks_machine ON asana_tasks_cache(machine_name);
   `);
+
+  // Work sessions table - tracks active work sessions for operators
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS work_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      operator_name TEXT NOT NULL,
+      part_gid TEXT NOT NULL,
+      part_name TEXT,
+      department TEXT,
+      start_timestamp TEXT NOT NULL,
+      end_timestamp TEXT,
+      total_parts_produced INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_work_sessions_operator ON work_sessions(operator_name);
+    CREATE INDEX IF NOT EXISTS idx_work_sessions_part ON work_sessions(part_gid);
+    CREATE INDEX IF NOT EXISTS idx_work_sessions_active ON work_sessions(operator_name, part_gid, end_timestamp);
+  `);
 }
 
 // Initialize on import
@@ -212,6 +232,153 @@ export function insertQCEntry(entry: UnifiedQCEntryInput): number {
   );
   
   return result.lastInsertRowid as number;
+}
+
+/**
+ * Work Session Management Functions
+ */
+
+export interface WorkSession {
+  id: number;
+  operator_name: string;
+  part_gid: string;
+  part_name: string | null;
+  department: string | null;
+  start_timestamp: string;
+  end_timestamp: string | null;
+  total_parts_produced: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Get active work session for an operator and part
+ */
+export function getActiveWorkSession(operatorName: string, partGid: string): WorkSession | null {
+  const stmt = db.prepare(`
+    SELECT * FROM work_sessions
+    WHERE operator_name = ? AND part_gid = ? AND end_timestamp IS NULL
+    ORDER BY start_timestamp DESC
+    LIMIT 1
+  `);
+  
+  const session = stmt.get(operatorName, partGid) as WorkSession | undefined;
+  return session || null;
+}
+
+/**
+ * Get all work sessions for a part (active and completed)
+ */
+export function getAllWorkSessionsForPart(partGid: string): WorkSession[] {
+  const stmt = db.prepare(`
+    SELECT * FROM work_sessions
+    WHERE part_gid = ?
+    ORDER BY start_timestamp DESC
+  `);
+  
+  return stmt.all(partGid) as WorkSession[];
+}
+
+/**
+ * Get total parts produced for a part from QC entries
+ */
+export function getTotalPartsProducedForPart(partGid: string): number {
+  const stmt = db.prepare(`
+    SELECT COALESCE(SUM(parts_produced), 0) as total
+    FROM qc_entries
+    WHERE asana_task_gid = ? AND parts_produced IS NOT NULL
+  `);
+  
+  const result = stmt.get(partGid) as { total: number } | undefined;
+  return result?.total || 0;
+}
+
+/**
+ * Start a new work session
+ */
+export function startWorkSession(
+  operatorName: string,
+  partGid: string,
+  partName: string | null,
+  department: string | null
+): number {
+  const startTimestamp = new Date().toISOString();
+  
+  const stmt = db.prepare(`
+    INSERT INTO work_sessions (operator_name, part_gid, part_name, department, start_timestamp)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  
+  const result = stmt.run(operatorName, partGid, partName || null, department || null, startTimestamp);
+  return result.lastInsertRowid as number;
+}
+
+/**
+ * Update parts count for a work session
+ * Adds the provided parts count to the running total (accumulative)
+ */
+export function updateWorkSessionParts(sessionId: number, partsCount: number): void {
+  const stmt = db.prepare(`
+    UPDATE work_sessions
+    SET total_parts_produced = total_parts_produced + ?,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `);
+  
+  stmt.run(partsCount, sessionId);
+}
+
+/**
+ * End a work session and create a QC entry
+ */
+export function endWorkSession(sessionId: number): { session: WorkSession; qcEntryId: number } {
+  const endTimestamp = new Date().toISOString();
+  
+  // Get the session
+  const getSessionStmt = db.prepare('SELECT * FROM work_sessions WHERE id = ?');
+  const session = getSessionStmt.get(sessionId) as WorkSession;
+  
+  if (!session) {
+    throw new Error('Work session not found');
+  }
+  
+  // Update session with end timestamp
+  const updateStmt = db.prepare(`
+    UPDATE work_sessions
+    SET end_timestamp = ?,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `);
+  updateStmt.run(endTimestamp, sessionId);
+  
+  // Calculate total time in minutes
+  const startTime = new Date(session.start_timestamp);
+  const endTime = new Date(endTimestamp);
+  const totalTimeMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+  
+  // Get entry date (YYYY-MM-DD format)
+  const entryDate = startTime.toISOString().split('T')[0];
+  
+  // Create QC entry
+  const qcEntry: UnifiedQCEntryInput = {
+    entry_date: entryDate,
+    department: session.department || '',
+    operator: session.operator_name,
+    part_name: session.part_name || null,
+    start_timestamp: session.start_timestamp,
+    stop_timestamp: endTimestamp,
+    total_time_minutes: totalTimeMinutes,
+    parts_produced: session.total_parts_produced,
+    asana_task_gid: session.part_gid,
+    qc_status: 'submitted',
+  };
+  
+  const qcEntryId = insertQCEntry(qcEntry);
+  
+  // Get updated session
+  const updatedSession = getSessionStmt.get(sessionId) as WorkSession;
+  
+  return { session: updatedSession, qcEntryId };
 }
 
 export default db;
