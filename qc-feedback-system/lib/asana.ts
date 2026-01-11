@@ -83,10 +83,10 @@ export async function getProjectTasks(projectGid: string) {
 
   const sections = sectionsResponse.data || [];
 
-  // Filter out "New Orders" and "Done" sections
-  const excludedSections = ['New Orders', 'Done'];
+  // Filter out "New Orders", "Done", and "Complete" sections (case-insensitive)
+  const excludedSections = ['New Orders', 'Done', 'Complete'];
   const validSections = sections.filter(
-    (s: any) => !excludedSections.includes(s.name)
+    (s: any) => !excludedSections.some(excluded => s.name.toLowerCase() === excluded.toLowerCase())
   );
 
   // If no valid sections, return empty array
@@ -125,6 +125,62 @@ export async function getProjectTasks(projectGid: string) {
   }
 
   return allTasks;
+}
+
+// Get completed tasks from the "Done" section
+export async function getCompletedTasks(projectGid: string, limit: number = 3) {
+  const client = getAsanaClient();
+  
+  // Get all sections in the project
+  const sectionsResponse = await client.sections.getSectionsForProject(projectGid, {
+    opt_fields: 'gid,name',
+  });
+
+  const sections = sectionsResponse.data || [];
+  
+  // Find the "Done" section
+  const doneSection = sections.find((s: any) => s.name === 'Done');
+  
+  if (!doneSection) {
+    return [];
+  }
+
+  // Get tasks from the "Done" section
+  try {
+    const tasksResponse = await client.tasks.getTasksForSection(doneSection.gid, {
+      opt_fields: 'gid,name,start_on,due_on,start_at,due_at,custom_fields',
+    });
+    
+    const tasks = tasksResponse.data || [];
+    
+    // Enrich all tasks with custom fields and get details
+    const enrichedTasks: any[] = [];
+    
+    for (const task of tasks) {
+      try {
+        const enrichedTask = await getTaskDetails(task.gid);
+        enrichedTasks.push({
+          ...enrichedTask,
+          section_name: 'Done',
+        });
+      } catch (error) {
+        console.error(`Error enriching completed task ${task.gid}:`, error);
+        // Continue with other tasks even if one fails
+      }
+    }
+    
+    // Sort by due date descending (most recent first), then take the top N
+    enrichedTasks.sort((a: any, b: any) => {
+      const aDate = a.due_on || a.due_at || '';
+      const bDate = b.due_on || b.due_at || '';
+      return bDate.localeCompare(aDate);
+    });
+    
+    return enrichedTasks.slice(0, limit);
+  } catch (error) {
+    console.error(`Error fetching completed tasks for project ${projectGid}:`, error);
+    return [];
+  }
 }
 
 // Get attachments for a task

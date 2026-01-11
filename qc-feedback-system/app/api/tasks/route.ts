@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getProjectTasks, getTaskDetails, cacheTasks } from '@/lib/asana';
+import { getProjectTasks, getTaskDetails, cacheTasks, getCompletedTasks } from '@/lib/asana';
 import db from '@/lib/db';
 
 export async function GET(request: Request) {
@@ -32,16 +32,8 @@ export async function GET(request: Request) {
       return aDate.localeCompare(bDate);
     });
 
-    // Get last 3 completed Parts (Tasks) from the department project
-    const completedTasks = db
-      .prepare(`
-        SELECT task_gid, task_name, section_name, start_date, due_date, custom_fields_json
-        FROM asana_tasks_cache
-        WHERE project_gid = ? AND section_name = 'Done'
-        ORDER BY due_date DESC
-        LIMIT 3
-      `)
-      .all(projectGid);
+    // Get last 3 completed Parts (Tasks) directly from Asana's "Done" section
+    const completedTasksFromAsana = await getCompletedTasks(projectGid, 3);
 
     return NextResponse.json({
       tasks: tasks.map((task: any) => ({
@@ -53,13 +45,13 @@ export async function GET(request: Request) {
         machine: task.machine_name,
         customFields: task.custom_fields,
       })),
-      completedTasks: completedTasks.map((task: any) => ({
-        gid: task.task_gid,
-        name: task.task_name,
+      completedTasks: completedTasksFromAsana.map((task: any) => ({
+        gid: task.gid,
+        name: task.name,
         section: task.section_name,
-        startDate: task.start_date,
-        dueDate: task.due_date,
-        customFields: task.custom_fields_json ? JSON.parse(task.custom_fields_json) : {},
+        startDate: task.start_on || task.start_at,
+        dueDate: task.due_on || task.due_at,
+        customFields: task.custom_fields || {},
       })),
     });
   } catch (error: any) {
