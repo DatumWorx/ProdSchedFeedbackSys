@@ -127,6 +127,63 @@ export async function getProjectTasks(projectGid: string) {
   return allTasks;
 }
 
+// Get attachments for a task
+export async function getTaskAttachments(taskGid: string) {
+  const client = getAsanaClient();
+  
+  try {
+    // Use dispatcher to make a direct API call to get task attachments
+    const attachmentsResponse = await (client as any).dispatcher.get(
+      `/tasks/${taskGid}/attachments`,
+      { opt_fields: 'gid,name,resource_subtype,download_url,view_url,created_at' },
+      {}
+    );
+    
+    const attachments = attachmentsResponse.data || [];
+    
+    // Filter for PDF attachments and get detailed info
+    const pdfAttachments = [];
+    
+    for (const attachment of attachments) {
+      // Check if it's a PDF by name extension
+      const name = attachment.name || '';
+      if (name.toLowerCase().endsWith('.pdf')) {
+        try {
+          // Get detailed attachment info to get download_url
+          const attachmentDetail = await client.attachments.getAttachment(attachment.gid, {
+            opt_fields: 'gid,name,resource_subtype,download_url,view_url,created_at',
+          });
+          
+          pdfAttachments.push({
+            gid: attachmentDetail.gid,
+            name: attachmentDetail.name,
+            downloadUrl: attachmentDetail.download_url,
+            viewUrl: attachmentDetail.view_url,
+            resourceSubtype: attachmentDetail.resource_subtype,
+            createdAt: attachmentDetail.created_at,
+          });
+        } catch (error) {
+          console.error(`Error fetching attachment details ${attachment.gid}:`, error);
+          // Include basic info even if detail fetch fails
+          pdfAttachments.push({
+            gid: attachment.gid,
+            name: attachment.name,
+            downloadUrl: attachment.download_url,
+            viewUrl: attachment.view_url,
+            resourceSubtype: attachment.resource_subtype,
+            createdAt: attachment.created_at,
+          });
+        }
+      }
+    }
+    
+    return pdfAttachments;
+  } catch (error) {
+    console.error(`Error fetching attachments for task ${taskGid}:`, error);
+    throw error;
+  }
+}
+
 // Get detailed task information with custom fields
 export async function getTaskDetails(taskGid: string) {
   const client = getAsanaClient();

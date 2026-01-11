@@ -10,6 +10,12 @@ declare module 'asana' {
       getTasksForSection(sectionGid: string, options?: any): Promise<any>;
       getTask(taskGid: string, options?: any): Promise<any>;
     };
+    attachments: {
+      getAttachment(attachmentGid: string, options?: any): Promise<any>;
+    };
+    dispatcher: {
+      get(path: string, params?: any, options?: any): Promise<any>;
+    };
     customfields: {
       findByWorkspace(workspaceGid: string, options?: any): Promise<any>;
       findById(customFieldGid: string, options?: any): Promise<any>;

@@ -36,12 +36,23 @@ interface CompletedTask {
   customFields: Record<string, any>;
 }
 
+interface Attachment {
+  gid: string;
+  name: string;
+  downloadUrl: string | null;
+  viewUrl: string | null;
+  resourceSubtype: string;
+  createdAt: string;
+}
+
 export default function Home() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [operators, setOperators] = useState<Operator[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [completedTasks, setCompletedTasks] = useState<CompletedTask[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
 
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedMachine, setSelectedMachine] = useState<string>('');
@@ -177,6 +188,31 @@ export default function Home() {
       setSelectedMachine(taskMachine);
     }
   }, [selectedPart, tasks, machines, selectedMachine]);
+
+  // Load attachments when a task is selected
+  useEffect(() => {
+    if (!selectedPart) {
+      setAttachments([]);
+      return;
+    }
+
+    setLoadingAttachments(true);
+    fetch(`/api/attachments?taskGid=${encodeURIComponent(selectedPart)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.attachments) {
+          setAttachments(data.attachments);
+        } else {
+          setAttachments([]);
+        }
+        setLoadingAttachments(false);
+      })
+      .catch(err => {
+        console.error('Error fetching attachments:', err);
+        setAttachments([]);
+        setLoadingAttachments(false);
+      });
+  }, [selectedPart]);
 
   const selectedTask = tasks.find(t => t.gid === selectedPart);
 
@@ -332,6 +368,71 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* PDF Attachments */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">PDF Attachments</h3>
+              {loadingAttachments ? (
+                <p className="text-gray-600">Loading attachments...</p>
+              ) : attachments.length > 0 ? (
+                <div className="space-y-3">
+                  {attachments.map((attachment) => (
+                    <div
+                      key={attachment.gid}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <svg
+                          className="w-8 h-8 text-red-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <div>
+                          <p className="text-base font-medium text-gray-900">{attachment.name}</p>
+                          {attachment.createdAt && (
+                            <p className="text-sm text-gray-500">
+                              Added: {new Date(attachment.createdAt).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {attachment.viewUrl && (
+                          <a
+                            href={attachment.viewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            View
+                          </a>
+                        )}
+                        {attachment.downloadUrl && (
+                          <a
+                            href={attachment.downloadUrl}
+                            download
+                            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm font-medium"
+                          >
+                            Download
+                          </a>
+                        )}
+                        {!attachment.viewUrl && !attachment.downloadUrl && (
+                          <span className="text-sm text-gray-500">External attachment</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600">No PDF attachments found for this task.</p>
+              )}
+            </div>
           </div>
         )}
 
